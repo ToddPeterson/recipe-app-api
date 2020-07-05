@@ -211,6 +211,52 @@ class PrivateRecipeApiTests(TestCase):
 
         tags = recipe.tags.all()
         self.assertEqual(len(tags), 0)
+    
+    def test_filter_recipes_by_tag(self):
+        """Test returning recipes with specific tags"""
+        recipe1 = sample_recipe(user=self.user, title='Curry')
+        recipe2 = sample_recipe(user=self.user, title='Shwarma')
+        tag1 = sample_tag(user=self.user, name='Vegan')
+        tag2 = sample_tag(user=self.user, name='Vegetarian')
+        recipe1.tags.add(tag1)
+        recipe2.tags.add(tag2)
+        recipe3 = sample_recipe(user=self.user, title='steak')
+
+        req = self.client.get(
+            RECIPE_URL,
+            {'tags': f'{tag1.id},{tag2.id}'}
+        )
+
+        serializer1 = RecipeSerializer(recipe1)
+        serializer2 = RecipeSerializer(recipe2)
+        serializer3 = RecipeSerializer(recipe3)
+
+        self.assertIn(serializer1.data, req.data)
+        self.assertIn(serializer2.data, req.data)
+        self.assertNotIn(serializer3.data, req.data)
+
+    def test_filter_recipes_by_ingredients(self):
+        """Test returning ingredients with specific ingredients"""
+        recipe1 = sample_recipe(user=self.user, title='Curry')
+        recipe2 = sample_recipe(user=self.user, title='Shwarma')
+        ing1 = sample_ingredient(user=self.user, name='Coconut milk')
+        ing2 = sample_ingredient(user=self.user, name='Paneer')
+        recipe1.ingredients.add(ing1)
+        recipe2.ingredients.add(ing2)
+        recipe3 = sample_recipe(user=self.user, title='Steak')
+
+        req = self.client.get(
+            RECIPE_URL,
+            {'ingredients': f'{ing1.id},{ing2.id}'}
+        )
+
+        serializer1 = RecipeSerializer(recipe1)
+        serializer2 = RecipeSerializer(recipe2)
+        serializer3 = RecipeSerializer(recipe3)
+
+        self.assertIn(serializer1.data, req.data)
+        self.assertIn(serializer2.data, req.data)
+        self.assertNotIn(serializer3.data, req.data)
 
 
 class RecipeImageUploadTests(TestCase):
