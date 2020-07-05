@@ -211,7 +211,7 @@ class PrivateRecipeApiTests(TestCase):
 
         tags = recipe.tags.all()
         self.assertEqual(len(tags), 0)
-    
+
     def test_filter_recipes_by_tag(self):
         """Test returning recipes with specific tags"""
         recipe1 = sample_recipe(user=self.user, title='Curry')

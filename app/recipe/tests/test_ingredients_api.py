@@ -5,7 +5,7 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from core.models import Ingredient
+from core.models import Ingredient, Recipe
 
 from recipe.serializers import IngredientSerializer
 
@@ -84,3 +84,52 @@ class PrivateIngredientsApiTest(TestCase):
         req = self.client.post(INGREDIENTS_URL, payload)
 
         self.assertEqual(req.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_retrieve_ingredients_assigned_to_recipes(self):
+        """Test filtering ingredients by assigned to recipe"""
+        ing1 = Ingredient.objects.create(
+            user=self.user,
+            name='Pear'
+        )
+        ing2 = Ingredient.objects.create(
+            user=self.user,
+            name='Salami'
+        )
+        recipe = Recipe.objects.create(
+            user=self.user,
+            title='Sandwich',
+            time_minutes=5,
+            price=4.00
+        )
+        recipe.ingredients.add(ing2)
+
+        req = self.client.get(INGREDIENTS_URL, {'assigned_only': 1})
+
+        serializer1 = IngredientSerializer(ing1)
+        serializer2 = IngredientSerializer(ing2)
+
+        self.assertNotIn(serializer1.data, req.data)
+        self.assertIn(serializer2.data, req.data)
+
+    def test_retrieve_ingredients_assigned_unique(self):
+        """Test filtering ingredients by assinged returns unique"""
+        ing = Ingredient.objects.create(user=self.user, name='Bread')
+        Ingredient.objects.create(user=self.user, name='Mustard')
+        recipe1 = Recipe.objects.create(
+            user=self.user,
+            title='Toast',
+            time_minutes=4,
+            price=1.00
+        )
+        recipe2 = Recipe.objects.create(
+            user=self.user,
+            title='Raw Toast',
+            time_minutes=4,
+            price=1.00
+        )
+        recipe1.ingredients.add(ing)
+        recipe2.ingredients.add(ing)
+
+        req = self.client.get(INGREDIENTS_URL, {'assigned_only': 1})
+
+        self.assertEqual(len(req.data), 1)
