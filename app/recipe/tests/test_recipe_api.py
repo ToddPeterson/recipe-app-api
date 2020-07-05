@@ -106,3 +106,58 @@ class PrivateRecipeApiTests(TestCase):
 
         serializer = RecipeDetailSerializer(recipe)
         self.assertEqual(req.data, serializer.data)
+
+    def test_create_basic_recipe(self):
+        """Test creating recipe"""
+        payload = {
+            'title': 'Cheesecake',
+            'time_minutes': 30,
+            'price': 5.00
+        }
+        req = self.client.post(RECIPE_URL, payload)
+
+        self.assertEqual(req.status_code, status.HTTP_201_CREATED)
+
+        recipe = Recipe.objects.get(id=req.data['id'])
+        for key in payload:
+            self.assertEqual(payload[key], getattr(recipe, key))
+
+    def test_create_recipe_with_tags(self):
+        """Test creating recipe with tags"""
+        tag1 = sample_tag(user=self.user, name='Gluten free')
+        tag2 = sample_tag(user=self.user, name='Breakfast')
+        payload = {
+            'title': 'Banana Pancakes',
+            'tags': [tag1.id, tag2.id],
+            'time_minutes': 15,
+            'price': 3.00
+        }
+        req = self.client.post(RECIPE_URL, payload)
+
+        self.assertEqual(req.status_code, status.HTTP_201_CREATED)
+
+        recipe = Recipe.objects.get(id=req.data['id'])
+        tags = recipe.tags.all()
+        self.assertEqual(tags.count(), 2)
+        self.assertIn(tag1, tags)
+        self.assertIn(tag2, tags)
+
+    def test_create_recipe_with_ingredients(self):
+        """Test creating a recipe with ingredients"""
+        ing1 = sample_ingredient(user=self.user, name='flour')
+        ing2 = sample_ingredient(user=self.user, name='water')
+        payload = {
+            'title': 'Pizza dough',
+            'ingredients': [ing1.id, ing2.id],
+            'time_minutes': 480,
+            'price': 2.50
+        }
+        req = self.client.post(RECIPE_URL, payload)
+
+        self.assertEqual(req.status_code, status.HTTP_201_CREATED)
+
+        recipe = Recipe.objects.get(id=req.data['id'])
+        ingredients = recipe.ingredients.all()
+        self.assertEqual(ingredients.count(), 2)
+        self.assertIn(ing1, ingredients)
+        self.assertIn(ing2, ingredients)
